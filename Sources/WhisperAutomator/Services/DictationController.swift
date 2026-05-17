@@ -38,14 +38,6 @@ final class DictationController: ObservableObject {
         return TranscriptionLanguage(rawValue: raw) ?? .russian
     }
 
-    var menuBarIcon: String {
-        switch state {
-        case .idle, .success, .error: "mic"
-        case .recording: "mic.fill"
-        case .transcribing: "ellipsis.circle"
-        }
-    }
-
     var statusText: String {
         switch state {
         case .idle: "Ready"

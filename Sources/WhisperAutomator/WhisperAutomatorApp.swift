@@ -11,8 +11,15 @@ struct WhisperAutomatorApp: App {
             SettingsView()
         }
 
-        MenuBarExtra("Whisper Automator", systemImage: dictationController.menuBarIcon) {
-            Label(dictationController.statusText, systemImage: dictationController.menuBarIcon)
+        MenuBarExtra {
+            Label {
+                Text(dictationController.statusText)
+            } icon: {
+                Image(nsImage: dictationController.menuBarIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 18, height: 18)
+            }
 
             Divider()
 
@@ -30,6 +37,12 @@ struct WhisperAutomatorApp: App {
             Button("Quit Whisper Automator") {
                 NSApplication.shared.terminate(nil)
             }
+        } label: {
+            Image(nsImage: dictationController.menuBarIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 18, height: 18)
+                .accessibilityLabel("Whisper Automator")
         }
         .menuBarExtraStyle(.menu)
     }
