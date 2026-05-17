@@ -39,20 +39,27 @@ Or just build without launching:
 1. Launch the app
 2. Open Settings (**Cmd+,**)
 3. Paste your OpenAI API key and click **Save Key**
-4. The key is stored securely in macOS Keychain
+4. Configure the **Hold to dictate** shortcut
+5. Grant Accessibility access when prompted so text can be inserted into other apps
+6. The key is stored securely in macOS Keychain
 
 ## Usage
 
-1. Select the transcription language (Русский / Қазақша / English)
-2. Press **Record** (or hit **Space**)
+1. Click in any text input where you want the dictated text to appear
+2. Hold your configured dictation shortcut
 3. Speak into your microphone
-4. Press **Stop** — the audio is sent to the Whisper API
-5. The transcribed text appears in the app
-6. Click **Copy to Clipboard** to use the text elsewhere
+4. Release the shortcut — the audio is sent to the Whisper API
+5. The transcribed text is pasted into the focused input field
+
+Whisper Automator also appears in the macOS menu bar. Use the menu bar item to view status, start or stop recording, open the app, open Settings, or quit.
 
 ## Microphone Permission
 
 On first recording the system will prompt for microphone access. Grant it to `Whisper Automator.app`. If you previously denied access, re-enable it in **System Settings > Privacy & Security > Microphone**.
+
+## Accessibility Permission
+
+Text insertion into other apps requires Accessibility access. If you skip the permission, transcriptions are copied to the clipboard instead. You can request access from Settings.
 
 ## Privacy
 

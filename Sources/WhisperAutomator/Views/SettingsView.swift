@@ -1,3 +1,5 @@
+import ApplicationServices
+@preconcurrency import KeyboardShortcuts
 import SwiftUI
 
 struct SettingsView: View {
@@ -57,11 +59,43 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.radioGroup)
             }
+
+            Section("Dictation Shortcut") {
+                KeyboardShortcuts.Recorder("Hold to dictate:", name: .holdToTalk)
+
+                Text("Hold this shortcut while speaking. Release it to transcribe and paste the text into the currently focused input field.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section("Text Insertion Permission") {
+                HStack {
+                    Text(AXIsProcessTrusted() ? "Accessibility access granted" : "Accessibility access required")
+                        .foregroundColor(AXIsProcessTrusted() ? .secondary : .orange)
+
+                    Spacer()
+
+                    Button("Request Access") {
+                        requestAccessibilityAccess()
+                    }
+                }
+
+                Text("Accessibility access lets WhisperAutomator paste dictated text into other apps and text fields.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 280)
+        .frame(width: 500, height: 460)
         .onAppear {
             apiKey = KeychainStore.loadAPIKey() ?? ""
         }
+    }
+
+    private func requestAccessibilityAccess() {
+        let options = [
+            "AXTrustedCheckOptionPrompt": true
+        ] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
     }
 }

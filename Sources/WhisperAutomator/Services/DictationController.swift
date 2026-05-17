@@ -1,5 +1,5 @@
 import Combine
-import KeyboardShortcuts
+@preconcurrency import KeyboardShortcuts
 import os.log
 import SwiftUI
 
@@ -19,6 +19,14 @@ final class DictationController: ObservableObject {
 
     let recorder = AudioRecorder()
     private var cancellables = Set<AnyCancellable>()
+
+    var isRecording: Bool {
+        state == .recording
+    }
+
+    var isTranscribing: Bool {
+        state == .transcribing
+    }
 
     private var selectedLanguage: TranscriptionLanguage {
         let raw = UserDefaults.standard.string(forKey: "defaultLanguage")
@@ -59,13 +67,17 @@ final class DictationController: ObservableObject {
     }
 
     func endHoldToTalkAndTranscribe() {
+        stopRecordingAndTranscribe(insertIntoFocusedApp: true)
+    }
+
+    func stopRecordingAndTranscribe(insertIntoFocusedApp: Bool) {
         guard recorder.isRecording, let url = recorder.recordingURL else {
-            logger.warning("endHoldToTalk: not recording or no file URL")
+            logger.warning("stopRecordingAndTranscribe: not recording or no file URL")
             return
         }
         recorder.stopRecording()
-        logger.info("Hold-to-talk: recording stopped, file at \(url.path)")
-        transcribe(fileURL: url, insertIntoFocusedApp: true)
+        logger.info("Recording stopped, file at \(url.path)")
+        transcribe(fileURL: url, insertIntoFocusedApp: insertIntoFocusedApp)
     }
 
     func toggleRecording() {
