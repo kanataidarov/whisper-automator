@@ -3,15 +3,10 @@ import SwiftUI
 
 @main
 struct WhisperAutomatorApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var dictationController = DictationController()
-    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
-        WindowGroup("Whisper Automator", id: "main") {
-            ContentView(controller: dictationController)
-        }
-        .windowResizability(.contentSize)
-
         Settings {
             SettingsView()
         }
@@ -21,22 +16,13 @@ struct WhisperAutomatorApp: App {
 
             Divider()
 
-            Button(dictationController.isRecording ? "Stop & Transcribe" : "Start Dictation") {
-                if dictationController.isRecording {
-                    dictationController.stopRecordingAndTranscribe(insertIntoFocusedApp: true)
-                } else {
-                    dictationController.beginHoldToTalk()
-                }
+            Button(dictationController.isRecording ? "Stop Recording & Transcribe" : "Start Recording") {
+                dictationController.toggleRecording(insertIntoFocusedApp: true)
             }
             .disabled(dictationController.isTranscribing)
 
-            Button("Open App") {
-                openWindow(id: "main")
-                NSApp.activate(ignoringOtherApps: true)
-            }
-
             SettingsLink {
-                Text("Settings...")
+                Text("Settings…")
             }
 
             Divider()
@@ -46,5 +32,11 @@ struct WhisperAutomatorApp: App {
             }
         }
         .menuBarExtraStyle(.menu)
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
     }
 }

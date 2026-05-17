@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 @preconcurrency import KeyboardShortcuts
 import os.log
@@ -19,6 +20,9 @@ final class DictationController: ObservableObject {
 
     let recorder = AudioRecorder()
     private var cancellables = Set<AnyCancellable>()
+    private var activationObserver: NSObjectProtocol?
+    private var lastFocusedApplicationPID: pid_t?
+    private var pendingInsertionTargetPID: pid_t?
 
     var isRecording: Bool {
         state == .recording
@@ -54,13 +58,15 @@ final class DictationController: ObservableObject {
 
     init() {
         observeRecorder()
+        observeFocusedApplications()
         setupHotkeys()
     }
 
     // MARK: - Public actions
 
-    func beginHoldToTalk() {
+    func beginHoldToTalk(insertIntoFocusedApp: Bool = false) {
         guard state != .recording, state != .transcribing else { return }
+        pendingInsertionTargetPID = insertIntoFocusedApp ? currentInsertionTargetPID() : nil
         logger.info("Hold-to-talk: recording started")
         state = .recording
         recorder.startRecording()
@@ -75,23 +81,24 @@ final class DictationController: ObservableObject {
             logger.warning("stopRecordingAndTranscribe: not recording or no file URL")
             return
         }
+        let insertionTargetPID = insertIntoFocusedApp
+            ? pendingInsertionTargetPID ?? currentInsertionTargetPID()
+            : nil
+        pendingInsertionTargetPID = nil
         recorder.stopRecording()
         logger.info("Recording stopped, file at \(url.path)")
-        transcribe(fileURL: url, insertIntoFocusedApp: insertIntoFocusedApp)
+        transcribe(
+            fileURL: url,
+            insertIntoFocusedApp: insertIntoFocusedApp,
+            insertionTargetPID: insertionTargetPID
+        )
     }
 
-    func toggleRecording() {
+    func toggleRecording(insertIntoFocusedApp: Bool = false) {
         if recorder.isRecording {
-            // Capture URL before stopRecording clears it
-            guard let url = recorder.recordingURL else {
-                recorder.stopRecording()
-                return
-            }
-            recorder.stopRecording()
-            transcribe(fileURL: url, insertIntoFocusedApp: false)
+            stopRecordingAndTranscribe(insertIntoFocusedApp: insertIntoFocusedApp)
         } else {
-            state = .recording
-            recorder.startRecording()
+            beginHoldToTalk(insertIntoFocusedApp: insertIntoFocusedApp)
         }
     }
 
@@ -102,15 +109,65 @@ final class DictationController: ObservableObject {
             .sink { [weak self] recorderState in
                 if case .failed(let msg) = recorderState {
                     self?.state = .error(msg)
+                    self?.pendingInsertionTargetPID = nil
                 }
             }
             .store(in: &cancellables)
     }
 
+    private func observeFocusedApplications() {
+        if let frontmostApplication = NSWorkspace.shared.frontmostApplication {
+            rememberFocusedApplication(
+                processIdentifier: frontmostApplication.processIdentifier,
+                bundleIdentifier: frontmostApplication.bundleIdentifier
+            )
+        }
+
+        activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard
+                let application = notification.userInfo?[NSWorkspace.applicationUserInfoKey]
+                    as? NSRunningApplication
+            else {
+                return
+            }
+
+            let processIdentifier = application.processIdentifier
+            let bundleIdentifier = application.bundleIdentifier
+
+            Task { @MainActor [weak self] in
+                self?.rememberFocusedApplication(
+                    processIdentifier: processIdentifier,
+                    bundleIdentifier: bundleIdentifier
+                )
+            }
+        }
+    }
+
+    private func rememberFocusedApplication(processIdentifier: pid_t, bundleIdentifier: String?) {
+        guard processIdentifier != NSRunningApplication.current.processIdentifier else { return }
+        guard bundleIdentifier != Bundle.main.bundleIdentifier else { return }
+
+        lastFocusedApplicationPID = processIdentifier
+    }
+
+    private func currentInsertionTargetPID() -> pid_t? {
+        if let frontmostApplication = NSWorkspace.shared.frontmostApplication,
+           frontmostApplication.processIdentifier != NSRunningApplication.current.processIdentifier,
+           frontmostApplication.bundleIdentifier != Bundle.main.bundleIdentifier {
+            return frontmostApplication.processIdentifier
+        }
+
+        return lastFocusedApplicationPID
+    }
+
     nonisolated private func setupHotkeys() {
         KeyboardShortcuts.onKeyDown(for: .holdToTalk) { [weak self] in
             Task { @MainActor in
-                self?.beginHoldToTalk()
+                self?.beginHoldToTalk(insertIntoFocusedApp: true)
             }
         }
         KeyboardShortcuts.onKeyUp(for: .holdToTalk) { [weak self] in
@@ -120,7 +177,11 @@ final class DictationController: ObservableObject {
         }
     }
 
-    private func transcribe(fileURL: URL, insertIntoFocusedApp: Bool) {
+    private func transcribe(
+        fileURL: URL,
+        insertIntoFocusedApp: Bool,
+        insertionTargetPID: pid_t?
+    ) {
         state = .transcribing
         logger.info("Transcribing \(fileURL.lastPathComponent), language: \(self.selectedLanguage.rawValue)")
 
@@ -134,7 +195,10 @@ final class DictationController: ObservableObject {
                 if insertIntoFocusedApp {
                     Task.detached {
                         usleep(150_000) // 150 ms – let the previously-focused app stabilise
-                        TextInsertionService.insert(text)
+                        TextInsertionService.insert(
+                            text,
+                            targetProcessIdentifier: insertionTargetPID
+                        )
                     }
                 }
             } catch {

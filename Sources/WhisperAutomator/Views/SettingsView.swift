@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var showKey = false
     @State private var saveStatus: String?
     @AppStorage("defaultLanguage") private var defaultLanguage: String = TranscriptionLanguage.russian.rawValue
+    @AppStorage("textInsertionMode") private var textInsertionMode: String = TextInsertionMode.paste.rawValue
 
     var body: some View {
         Form {
@@ -60,6 +61,25 @@ struct SettingsView: View {
                 .pickerStyle(.radioGroup)
             }
 
+            Section("Text Insertion Mode") {
+                Picker("Mode", selection: $textInsertionMode) {
+                    ForEach(TextInsertionMode.allCases) { mode in
+                        VStack(alignment: .leading) {
+                            Text(mode.displayName)
+                            Text(mode.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .tag(mode.rawValue)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+
+                Text("\"Paste (Cmd+V)\" copies to the clipboard and sends Cmd+V. \"Type ASCII\" sends US-keyboard keycodes with a short delay; use it for RDP or when paste does not work.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             Section("Dictation Shortcut") {
                 KeyboardShortcuts.Recorder("Hold to dictate:", name: .holdToTalk)
 
@@ -86,9 +106,12 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 500, height: 460)
+        .frame(width: 540, height: 560)
         .onAppear {
             apiKey = KeychainStore.loadAPIKey() ?? ""
+            if textInsertionMode == "pasteViaSystemEvents" {
+                textInsertionMode = TextInsertionMode.paste.rawValue
+            }
         }
     }
 

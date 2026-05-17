@@ -78,6 +78,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
     <string>14.0</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>LSUIElement</key>
+    <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>WhisperAutomator needs microphone access to record audio for speech-to-text transcription.</string>
 </dict>
