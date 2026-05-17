@@ -52,13 +52,17 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Default Language") {
+            Section("Output Language (Translation)") {
                 Picker("Language", selection: $defaultLanguage) {
                     ForEach(TranscriptionLanguage.allCases) { lang in
                         Text(lang.displayName).tag(lang.rawValue)
                     }
                 }
                 .pickerStyle(.radioGroup)
+
+                Text("Speech is auto-detected. The final inserted text is translated into this language.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
 
             Section("Text Insertion Mode") {

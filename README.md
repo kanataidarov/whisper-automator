@@ -39,7 +39,7 @@ Or just build without launching:
 1. Launch the app — it appears only as a menu-bar icon (microphone)
 2. Click the menu-bar icon → **Settings…**
 3. Paste your OpenAI API key and click **Save Key**
-4. Choose your default transcription language
+4. Choose your output language (RU/EN/KZ). Speech is auto-detected and translated into this selected language
 5. Choose a text insertion mode. **Paste (Cmd+V)** is the default; **Type ASCII** helps with RDP when paste does not work
 6. Configure the **Hold to dictate** shortcut
 7. Grant Accessibility access when prompted so text can be inserted into other apps
@@ -52,14 +52,14 @@ Or just build without launching:
 1. Focus any text input where you want the dictated text to appear
 2. Hold your configured dictation shortcut
 3. Speak into your microphone
-4. Release the shortcut — the audio is sent to the Whisper API and the transcribed text is pasted into the focused input field
+4. Release the shortcut — the audio is transcribed, translated into your selected output language, and pasted into the focused input field
 
 ### Via menu-bar button
 
 1. Focus the text input where you want the transcription
 2. Click the menu-bar icon → **Start Recording**
 3. Speak into your microphone
-4. Click the menu-bar icon → **Stop Recording & Transcribe** — the transcribed text is pasted into the previously focused app
+4. Click the menu-bar icon → **Stop Recording & Transcribe** — the text is transcribed, translated into your selected output language, and pasted into the previously focused app
 
 For RDP or remote terminals, try **Type ASCII** in Settings if **Paste (Cmd+V)** misbehaves.
 

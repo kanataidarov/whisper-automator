@@ -14,4 +14,12 @@ enum TranscriptionLanguage: String, CaseIterable, Identifiable, Sendable {
         case .english: "English"
         }
     }
+
+    var translationTargetName: String {
+        switch self {
+        case .russian: "Russian"
+        case .kazakh: "Kazakh"
+        case .english: "English"
+        }
+    }
 }

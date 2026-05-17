@@ -183,12 +183,15 @@ final class DictationController: ObservableObject {
         insertionTargetPID: pid_t?
     ) {
         state = .transcribing
-        logger.info("Transcribing \(fileURL.lastPathComponent), language: \(self.selectedLanguage.rawValue)")
+        logger.info(
+            "Transcribing \(fileURL.lastPathComponent) and translating to: \(self.selectedLanguage.rawValue)"
+        )
 
         Task {
             do {
-                let text = try await WhisperClient.transcribe(
-                    fileURL: fileURL, language: selectedLanguage
+                let text = try await WhisperClient.transcribeAndTranslate(
+                    fileURL: fileURL,
+                    targetLanguage: selectedLanguage
                 )
                 logger.info("Transcription succeeded: \(text.prefix(80))…")
                 state = .success(text)
